@@ -3,18 +3,15 @@
 # Variable definition
 #
 # Use the script name as the base for the logfile name, add a timestamp to it.
-[string]$ScriptName = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
-[string]$Script:LogfileName = ($ScriptName + "_{0:yyyyMMdd-HHmmss}.log" -f [DateTime]::Now)
+[System.IO.FileInfo]$ScriptName = $MyInvocation.MyCommand.Name
+[System.IO.FileInfo]$LogfileName = ($ScriptName.BaseName + "_{0:yyyyMMdd-HHmmss}.log" -f [DateTime]::Now)
 
-# Set the log path to the script root directory
-[System.IO.DirectoryInfo]$Script:LogPath = $PSScriptRoot
-
-# Combine the log path and logfile name to create the full path of the logfile
-[System.IO.FileInfo]$script:LogFileFullPath = Join-Path -Path $Script:LogPath -ChildPath $Script:LogfileName
+# Combine the script directory and logfile name to create the full path of the logfile
+[System.IO.FileInfo]$script:LogFileFullPath = Join-Path -Path $PSScriptRoot -ChildPath $LogfileName
 
 # Set start and stop messages for the logfile
-[string]$Script:LogFileStart = "Logging started"
-[string]$Script:LogFileStop = "Logging stopped"
+[string]$Script:LogFileStart = "{0:dd.MM.yyyy H:mm:ss} : {1}" -f [DateTime]::Now, "Logging started"
+[string]$Script:LogFileStop = "{0:dd.MM.yyyy H:mm:ss} : {1}" -f [DateTime]::Now, "Logging stopped"
 
 # Set logging variables to control the initial logging behavior
 $Script:LoggingEnabled = $true
@@ -56,7 +53,7 @@ function Write-LogFile
             if (-not (Test-Path $script:LogFileFullPath -PathType Leaf))
             {
                 New-Item -ItemType File -Path $script:LogFileFullPath -Force -Confirm:$false -WhatIf:$false | Out-Null
-                Add-Content -Value "Logging started." -Path $script:LogFileFullPath -Encoding UTF8 -WhatIf:$false -Confirm:$false
+                Add-Content -Value $Script:LogFileStart -Path $script:LogFileFullPath -Encoding UTF8 -WhatIf:$false -Confirm:$false
             }
 
             # Write to Script:LogfileFullPath
