@@ -11,7 +11,7 @@
 
 # Set start and stop messages for the logfile
 [string]$Script:LogFileStart = "{0:dd.MM.yyyy H:mm:ss} : {1}" -f [DateTime]::Now, "Logging started"
-[string]$Script:LogFileStop = "{0:dd.MM.yyyy H:mm:ss} : {1}" -f [DateTime]::Now, "Logging stopped"
+[string]$Script:LogFileStop = "Logging stopped"
 
 # Set logging variables to control the initial logging behavior
 $Script:LoggingEnabled = $true
