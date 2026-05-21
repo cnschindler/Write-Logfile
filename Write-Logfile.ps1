@@ -16,13 +16,14 @@
 # Set logging variables to control the initial logging behavior
 $Script:LoggingEnabled = $true
 $Script:FileLoggingEnabled = $false
+$Script:ConsoleLoggingEnabled = $true
 
 function Write-LogFile
 {
     # Logging function, used for progress and error logging
     # Uses the globally (script scoped) configured variables 'LogFileFullPath' to identify the logfile, 'LoggingEnabled' to enable/disable logging
-    # and 'FileLoggingEnabled' to enable/disable file based logging
-    #
+    # 'FileLoggingEnabled' to enable/disable file based logging
+    # 'ConsoleLoggingEnabled' to enable/disable console based logging
     [CmdLetBinding()]
 
     param
@@ -43,38 +44,47 @@ function Write-LogFile
         $logLine = "{0:dd.MM.yyyy H:mm:ss} : INFO : {1}" -f [DateTime]::Now, $Message
     }
 
+    function Write-LogToConsole
+    {
+        # If an errorinfo was given, format the output in red
+        If ($ErrorInfo)
+        {
+            Write-Host -ForegroundColor Red -Object $logLine
+        }
+
+        Else
+        {
+            Write-Host -Object $logLine
+        }
+    }
+
+    function Write-LogToFile
+    {
+        # Create the Script:LogfileFullPath and folder structure if it doesn't exist
+        if (-not (Test-Path $script:LogFileFullPath -PathType Leaf))
+        {
+            New-Item -ItemType File -Path $script:LogFileFullPath -Force -Confirm:$false -WhatIf:$false | Out-Null
+            Add-Content -Value $Script:LogFileStart -Path $script:LogFileFullPath -Encoding UTF8 -WhatIf:$false -Confirm:$false
+        }
+
+        # Write to Script:LogfileFullPath
+        Add-Content -Value $logLine -Path $script:LogFileFullPath -Encoding UTF8 -WhatIf:$false -Confirm:$false
+    }
+
     # If logging is enabled...
     if ($Script:LoggingEnabled)
     {
-        # If file based logging is enabled, write to the logfile
-        if ($Script:FileLoggingEnabled)
+        # If file based and console based logging is enabled, write to the logfile and to the console
+        if ($Script:FileLoggingEnabled -and $Script:ConsoleLoggingEnabled)
         {
-            # Create the Script:LogfileFullPath and folder structure if it doesn't exist
-            if (-not (Test-Path $script:LogFileFullPath -PathType Leaf))
-            {
-                New-Item -ItemType File -Path $script:LogFileFullPath -Force -Confirm:$false -WhatIf:$false | Out-Null
-                Add-Content -Value $Script:LogFileStart -Path $script:LogFileFullPath -Encoding UTF8 -WhatIf:$false -Confirm:$false
-            }
-
-            # Write to Script:LogfileFullPath
-            Add-Content -Value $logLine -Path $script:LogFileFullPath -Encoding UTF8 -WhatIf:$false -Confirm:$false
-            Write-Verbose $logLine
+            Write-LogToFile
+            Write-LogToConsole
         }
 
-        # If file based logging is not enabled, Output the log line to the console
-        else
+        # If file based logging is not enabled, but console based logging is enabled, output the log line to the console
+        elseif ($Script:ConsoleLoggingEnabled)
         {
-            # If an errorinfo was given, format the output in red
-            If ($ErrorInfo)
-            {
-                Write-Host -ForegroundColor Red -Object $logLine
-            }
-
-            Else
-            {
-                Write-Host -Object $logLine
-            }
-
+            Write-LogToConsole
         }
     }
 }
